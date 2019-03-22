@@ -1,0 +1,114 @@
+#Task:Classification of given image using Convolutional neural network
+
+from keras.preprocessing.image import ImageDataGenerator
+#Importing ImageDataGenerator library
+train_datagen = ImageDataGenerator(
+   rescale=1./255,
+      shear_range=0.2,
+     zoom_range=0.2,
+            horizontal_flip=True)
+#rescale is one of the scaling technique that is 'x/max(x)'
+#Zoom range is to zoom in and zoom out images
+
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+#for test data, only scaling is required, since to test the given image
+
+training_set = train_datagen.flow_from_directory(
+'C:/Users/Manju/Downloads/Convolutional_Neural_Networks/dataset/training_set',
+target_size=(64,64),
+batch_size=32,class_mode='binary')
+#here class_mode is binary since input and target is binary
+#taking 8000 images belonging to 2 classes in train_set
+
+
+test_set = test_datagen.flow_from_directory(
+'C:/Users/Manju/Downloads/Convolutional_Neural_Networks/dataset/test_set',
+target_size=(64,64),
+batch_size=32,class_mode='binary')
+
+#Taking 2000 images belonging to 2 classes in test_set
+
+
+from keras.models import Sequential
+from keras.layers import Convolution2D
+from keras.layers import MaxPooling2D
+from keras.layers import Flatten
+from keras.layers import Dense
+
+#importing all required libraries
+
+classifier = Sequential()
+classifier.add(Convolution2D(32,3,3,input_shape=(64,64,3),activation='relu'))
+#Here we are taking 32 convolution maps with 3* filter size
+#input shape is 64columns,64rows with 03 dimensions
+
+classifier.add(MaxPooling2D(pool_size=(2,2)))
+
+#Not satisied with accuracy so taking one more convolution layer,we can this repeat this process upto some limits only
+#later we have to adjust number of neurons
+classifier.add(Convolution2D(32,3,3,activation='relu'))
+classifier.add(MaxPooling2D(pool_size=(2,2)))
+
+classifier.add(Flatten())
+#To supply all neurons int input,flattening
+#Artificial neural network starts after Flattening
+classifier.add(Dense(output_dim=128, activation='relu'))
+classifier.add(Dense(output_dim=128, activation='relu'))
+
+classifier.add(Dense(output_dim=1, activation='sigmoid'))
+classifier.compile(optimizer='adam',loss='binary_crossentropy',
+  metrics=['accuracy'])
+#Here optimizer is 'Adam', which will modify the learning rate from epoch to epoch
+#metrics is to measure the accuracy in train_set and test_set
+
+classifier.fit_generator(training_set,
+samples_per_epoch=8000,
+nb_epoch=25,
+validation_data=test_set,
+nb_val_samples=2000)
+
+from keras.models import load_model
+#saving the output knowledge in below link
+classifier.save('C:/Users/Manju/Desktop/my_model_cnn.h5') # creates a HDF5 file 'my_model.h5'
+# del classifier # deletes the existing model
+model = load_model('C:/Users/Manju/Desktop/my_model_cnn.h5')
+
+
+import numpy as np
+from keras.preprocessing import image
+test_image = image.load_img('C:/Users/Manju/Downloads/Convolutional_Neural_Networks/dataset/single_prediction/dog.59.jpg',target_size=(64,64))
+print(test_image)
+test_image = image.img_to_array(test_image)
+print(test_image)
+print(test_image[0,0,:].size)
+test_image = np.expand_dims(test_image,axis=0)
+#predicted image dimensions are not enough so expanding dimensions by using above function
+
+print(np.ndim(test_image))
+print(np.shape(test_image))
+#Checking number of dimensions and input shape of predicting image
+
+result= model.predict(test_image)
+#Predicting the given image using above function
+
+print(" prediction " , result)
+#Output is probablity
+
+if result>0.5:
+    result=1
+else:
+    result=0
+print(result)  
+print(training_set.class_indices)
+
+if(result==1):
+    print("Given image is  a Dog")
+elif result==0:
+    print("Given image is a Cat")
+else:
+    print("Given image is not a cat and is not a dog")
+    
+
+
+
